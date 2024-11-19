@@ -37,7 +37,14 @@ def display(original_image, processed_image):
 
     # Compute magnitude spectrum and shift zero frequency to center
     magnitude_spectrum = np.abs(processed_image)
-    shifted_magnitude_spectrum = np.fft.fftshift(magnitude_spectrum)
+
+    # Shift zero frequency to center
+    N, M = magnitude_spectrum.shape
+    shifted_magnitude_spectrum = np.zeros((N, M))
+
+    for i in range(N):
+        for j in range(M):
+            shifted_magnitude_spectrum[i,j] = magnitude_spectrum[(i + N//2) % N, (j + M//2) % M]
 
     # Display Fourier transform with logarithmic scale
     ax2.imshow(shifted_magnitude_spectrum, norm=LogNorm(), cmap='gray')
