@@ -18,12 +18,17 @@ def main():
     image = logic.load_image(image_filename)
     # Get dimensions of loaded image
     N, M = image.shape
-    # Init processed image to original image for now
-    processed_image = image
+    # Pad image for FFT methods (they require dimensions to be power of 2)
+    padded_image = logic.pad(image, N, M)
+    # Get dimensions of padded image
+    padded_N, padded_M = padded_image.shape
+    # Init processed image to padded image for now
+    processed_image = padded_image
 
     # Based on selected mode, perform the corresponding operation
     if mode == 1:
-        processed_image = logic.FFT_2D(image, N, M)
+        processed_image = logic.FFT_2D(padded_image, padded_N, padded_M)
+        processed_image = logic.crop(processed_image, N, M)
     elif mode == 2:
         processed_image = logic.denoise(image, N, M)
     elif mode == 3:
