@@ -109,10 +109,6 @@ def DFT_2D(f, N, M):
 def FFT_1D(x):
     # Get length of input vector
     N = len(x)
-    # While vector is not a power of 2, pad with zeros
-    while not math.log2(N).is_integer():
-        x = np.append(x, [0])
-        N += 1
 
     # Base case: simply return x since exponential component becomes 1
     if N <= 1:
@@ -121,10 +117,13 @@ def FFT_1D(x):
     # Split into even and odd indices
     even = FFT_1D(x[::2])
     odd = FFT_1D(x[1::2])
+
     # Compute factors
     factors = np.exp((-2j * np.pi * np.arange(N // 2)) / N)
+
     # Multiply odd indices by respective factor
     odd = np.multiply(factors, odd)
+
     # Init result
     result = np.zeros(N, dtype=complex)
     result[:N//2] = np.add(even, odd)
