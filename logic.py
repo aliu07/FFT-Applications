@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import scipy
+import math
 
 from matplotlib.colors import LogNorm
-from math import *
-
 
 
 # Function to load images as a matrix of integer values
@@ -13,8 +13,8 @@ def load_image(image_filename):
     return np.array(cv2.imread(image_filename, cv2.IMREAD_GRAYSCALE))
 
 
-
-# This function pads the image matrix with zeros to make sure that its dimensions are a power of 2
+# This function pads the image matrix with zeros to make sure that its
+# dimensions are a power of 2
 # image = input image
 # N = number of rows
 # M = number of columns
@@ -32,7 +32,6 @@ def pad(image, N, M):
     return padded_image
 
 
-
 # This function crops the input image to the specified dimensions.
 # image = input image matrix
 # N = number of rows to crop to
@@ -41,11 +40,10 @@ def crop(image, N, M):
     return image[:N, :M]
 
 
-
 # This function intakes 2 images and displays them side by side
 # The first param is the original image, the second param is the
 # processed image
-def display(original_image, processed_image):
+def display(original_image, processed_image, processed_image_title, isLogScale):
     # Create figure with 2 subplots side by side
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -54,19 +52,17 @@ def display(original_image, processed_image):
     ax1.set_title('Original Image')
     ax1.axis('off')
 
-    # Take inverse 2D FFT of processed image
-    N, M = processed_image.shape
-    inverse = np.abs(inverse_FFT_2D(processed_image, N, M))
-
-    # Display Fourier transform with logarithmic scale
-    ax2.imshow(inverse, norm=LogNorm(), cmap='gray')
-    ax2.set_title('Fourier Transform (Log Scale)')
+    # Display Fourier transform with logarithmic scale if need be
+    if isLogScale:
+        ax2.imshow(processed_image, norm=LogNorm(), cmap='gray')
+    else:
+        ax2.imshow(processed_image, cmap='gray')
+    ax2.set_title(processed_image_title)
     ax2.axis('off')
 
     # Adjust layout to prevent overlap
     plt.tight_layout()
     plt.show()
-
 
 
 # Naive implementation of 1D DFT
@@ -84,7 +80,6 @@ def DFT_1D(x):
         X[k] = sum
 
     return X
-
 
 
 # Given a 2D array of discrete values, perform the naive 2D discrete Fourier transform
@@ -108,7 +103,6 @@ def DFT_2D(f, N, M):
     return result
 
 
-
 # This function uses the Cooley-Tukey algorithm to compute the 1D FFT.
 # It uses a divide and conquer approach to improve performance (a lot faster than naive implementation)
 # x = input vector
@@ -116,7 +110,7 @@ def FFT_1D(x):
     # Get length of input vector
     N = len(x)
     # While vector is not a power of 2, pad with zeros
-    while not log2(N).is_integer():
+    while not math.log2(N).is_integer():
         x = np.append(x, [0])
         N += 1
 
@@ -139,7 +133,6 @@ def FFT_1D(x):
     return result
 
 
-
 def FFT_2D(f, N, M):
     # Init result
     result = np.zeros((N, M), dtype=complex)
@@ -155,10 +148,12 @@ def FFT_2D(f, N, M):
 
     return result
 
+
 # This function takes the inverse FFT of a 1D vector X.
 # X = input vector
 def inverse_FFT_1D(X):
     N = len(X)
+
     # Base case
     if N <= 1:
         return X
@@ -168,42 +163,33 @@ def inverse_FFT_1D(X):
     odd = inverse_FFT_1D(X[1::2])
 
     # Compute twiddle factors with correct IFFT sign
-    factors = np.exp(-2j * np.pi * np.arange(N) / N)
+    factors = np.exp(2j * np.pi * np.arange(N // 2) / N)
+
+    # Multiply odd indices by respective factor
+    odd = np.multiply(factors, odd)
 
     # Combine results with normalization
     result = np.zeros(N, dtype=complex)
-    for k in range(N//2):
-        result[k] = (even[k] + factors[k] * odd[k]) / 2
-        result[k + N//2] = (even[k] - factors[k] * odd[k]) / 2
+    result[:N//2] = np.add(even, odd)
+    result[N//2:] = np.subtract(even, odd)
 
     return result
-
 
 
 def inverse_FFT_2D(F, N, M):
-    # Find next power of 2 for both dimensions
-    power_2_N = 2 ** (N-1).bit_length()
-    power_2_M = 2 ** (M-1).bit_length()
-    # Pad input with zeros
-    padded_F = np.pad(F, ((0, power_2_N - N), (0, power_2_M - M)), mode='constant', constant_values=0)
     # Init result
-    result = np.zeros((power_2_N, power_2_M), dtype=complex)
+    result = np.zeros((N, M), dtype=complex)
+    col_transformed = np.zeros((N, M), dtype=complex)
 
-    # Apply 1D inverse FFT to rows
-    row_transformed = np.zeros((power_2_N, power_2_M), dtype=complex)
+    # Apply inverse 1D FFT to each column
+    for i in range(M):
+        col_transformed[:, i] = inverse_FFT_1D(F[:, i])
 
-    for i in range(power_2_N):
-        row_transformed[i] = inverse_FFT_1D(padded_F[i])
-
-    # Apply 1D inverse FFT to cols
-    for j in range(power_2_M):
-        result[:, j] = inverse_FFT_1D(row_transformed[:, j])
-
-    # Crop back to original dimensions
-    result = result[:N, :M]
+    # Apply inverse 1D FFT to each row
+    for j in range(N):
+        result[j] = inverse_FFT_1D(col_transformed[j])
 
     return result
-
 
 
 # This function denoises an image by removing frequencies in the Fourier domain
@@ -211,21 +197,40 @@ def inverse_FFT_2D(F, N, M):
 # f = input 2D matrix of image
 # N = number of rows
 # M = number of columns
-# lower = lower bound value
-# upper = upper bound value
-def denoise(f, N, M, lower=np.pi, upper=1.5 * np.pi):
+# percentage = percentage of coefficients to keep (50% by default)
+def denoise(f, N, M, percentage=50):
     # Compute FFT of image
     F = FFT_2D(f, N, M)
-    # Calculate phase of each value in image
-    phase = np.angle(F)
-    # Calculate fundamental frequencies by taking the modulo by 2pi
-    fundamental_freq = np.mod(phase, 2 * np.pi)
-    # Filter out values by creating a mask
-    mask = ~((fundamental_freq >= lower) & (fundamental_freq <= upper))
-    F_filtered = F * mask
-    # Print statistics about how many frequencies were filtered
-    total_coeffs = N * M
-    kept_coeffs = np.count_nonzero(mask)
-    print(f"Kept {kept_coeffs} out of {total_coeffs} coefficients ({kept_coeffs/total_coeffs:.2%})")
 
-    return F_filtered
+    # Shift zero frequency components to center
+    F_shifted = np.fft.fftshift(F)
+
+    # Create mask for specified percentage
+    center_row, center_col = N//2, M//2
+
+    # Calculate radius that keeps the percentage specified of coefficients
+    total_area = N * M
+    desired_area = total_area * percentage / 100
+    radius = int(math.sqrt(desired_area / math.pi))
+
+    # Create circular mask
+    mask = np.zeros((N, M))
+    y, x = np.ogrid[-center_row:N-center_row, -center_col:M-center_col]
+    mask_area = x*x + y*y <= radius*radius
+    mask[mask_area] = 1
+
+    # Apply mask and count non-zero coefficients
+    F_filtered = F_shifted * mask
+    non_zeros = np.count_nonzero(F_filtered)
+    total_coeffs = N * M
+
+    print(f"Number of non-zero coefficients: {non_zeros}")
+    print(f"Fraction of original coefficients: {non_zeros/total_coeffs:.2%}")
+
+    # Shift back
+    F_filtered = np.fft.ifftshift(F_filtered)
+
+    # Take inverse FFT
+    filtered_image = np.real(inverse_FFT_2D(F_filtered, N, M))
+
+    return filtered_image

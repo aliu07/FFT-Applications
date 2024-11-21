@@ -1,6 +1,7 @@
 import argparse
 import utils
 import logic
+import numpy as np
 
 def parse_input():
     parser = argparse.ArgumentParser(description='FFT Application')
@@ -27,17 +28,25 @@ def main():
 
     # Based on selected mode, perform the corresponding operation
     if mode == 1:
-        processed_image = logic.FFT_2D(padded_image, padded_N, padded_M)
-        processed_image = logic.crop(processed_image, N, M)
+        # Obtain 2D FFT of image
+        fft_image = logic.FFT_2D(padded_image, padded_N, padded_M)
+        # Crop image back to original dimensions
+        fft_image = logic.crop(fft_image, N, M)
+        # We only keep the magnitude of each value in the matrix
+        fft_image = np.abs(fft_image)
+        # Display images side by side with logarithmic scaling
+        logic.display(image, fft_image, "Fourier Transform of Original Image (Log Scale)", True)
     elif mode == 2:
-        processed_image = logic.denoise(image, N, M)
+        # Obtain denoised image
+        denoised_image = logic.denoise(padded_image, padded_N, padded_M)
+        # Crop denoised image
+        denoised_image = logic.crop(denoised_image, N, M)
+        # Display images side by side
+        logic.display(image, denoised_image, "Denoised Image", False)
     elif mode == 3:
         print("Mode 3 selected - compress")
     elif mode == 4:
         print("Mode 4 selected - plot runtime graphs")
-
-    # Display images side by side
-    logic.display(image, processed_image)
 
 if __name__ == "__main__":
     main()
