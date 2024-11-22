@@ -3,11 +3,13 @@ import utils
 import logic
 import numpy as np
 
+
 def parse_input():
     parser = argparse.ArgumentParser(description='FFT Application')
     parser.add_argument('-m', type=utils.validate_mode, default=1)
     parser.add_argument('-i', type=utils.validate_image_filename, default="moonlanding.png")
     return parser.parse_args()
+
 
 def main():
     # Parse user inputs
@@ -53,6 +55,7 @@ def main():
         logic.display_compressed_images(image, compressed_images, [0] + compression_lvls)
     elif mode == 4:
         print("Mode 4 selected - plot runtime graphs")
+
 
 if __name__ == "__main__":
     main()

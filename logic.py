@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import scipy
 import math
 
 from matplotlib.colors import LogNorm
@@ -259,6 +258,7 @@ def denoise(f, N, M, percentage=50):
     filtered_image = np.real(inverse_FFT_2D(F_filtered, N, M))
 
     return filtered_image
+
 
 # This function compresses an image to 5 levels of compression
 # f = input image
