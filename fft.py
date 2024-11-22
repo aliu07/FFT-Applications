@@ -25,8 +25,6 @@ def main():
     padded_image = logic.pad(image, N, M)
     # Get dimensions of padded image
     padded_N, padded_M = padded_image.shape
-    # Init processed image to padded image for now
-    processed_image = padded_image
 
     # Based on selected mode, perform the corresponding operation
     if mode == 1:
@@ -46,8 +44,10 @@ def main():
         # Display images side by side
         logic.display(image, denoised_image, "Denoised Image", False)
     elif mode == 3:
+        # Compression levels (%)
+        compression_lvls = [60, 90, 93, 96, 99.9]
         # Obtain collection of compressed images
-        compressed_images, compression_lvls = logic.compress(padded_image, padded_N, padded_M)
+        compressed_images, compression_lvls = logic.compress(padded_image, padded_N, padded_M, compression_lvls)
         # Crop each image back to its original dimensions
         for i in range(len(compressed_images)):
             compressed_images[i] = logic.crop(compressed_images[i], N, M)

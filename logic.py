@@ -264,9 +264,8 @@ def denoise(f, N, M, percentage=50):
 # f = input image
 # N = number of rows
 # M = number of columns
-def compress(f, N, M):
-    # Define compression levels (percentage of coefficients to zero out)
-    compression_levels = [20, 40, 60, 80, 99.9]
+# compression_levels = array of percentages to which we will compress
+def compress(f, N, M, compression_levels):
     # Init result array of compressed images
     compressed_images = []
 

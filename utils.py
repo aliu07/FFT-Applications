@@ -31,6 +31,6 @@ def _is_valid_file(filename):
 # Private helper function to validate if file extension is a valid image extension
 def _is_valid_image_file(filename):
     # Can add more valid extensions in the future
-    valid_extensions = ['.png']
+    valid_extensions = ['.png', '.jpg', '.jpeg']
     _, ext = os.path.splitext(filename.lower())
     return ext in valid_extensions
