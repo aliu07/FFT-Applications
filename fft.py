@@ -44,7 +44,13 @@ def main():
         # Display images side by side
         logic.display(image, denoised_image, "Denoised Image", False)
     elif mode == 3:
-        print("Mode 3 selected - compress")
+        # Obtain collection of compressed images
+        compressed_images, compression_lvls = logic.compress(padded_image, padded_N, padded_M)
+        # Crop each image back to its original dimensions
+        for i in range(len(compressed_images)):
+            compressed_images[i] = logic.crop(compressed_images[i], N, M)
+        # Display images in a 2x3 grid
+        logic.display_compressed_images(image, compressed_images, [0] + compression_lvls)
     elif mode == 4:
         print("Mode 4 selected - plot runtime graphs")
 

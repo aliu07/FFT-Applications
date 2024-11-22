@@ -65,6 +65,32 @@ def display(original_image, processed_image, processed_image_title, isLogScale):
     plt.show()
 
 
+# This function displays the original image and its compressed counterparts
+# in a 2x3 grid.
+# original_image = original image as name suggests
+# compressed_images = array of 6 images (original + 5 compressed)
+# compression_lvls = array of elems representing compression level %
+def display_compressed_images(original_image, compressed_images, compression_lvls):
+    # Create 2x3 subplot
+    fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+    # Flatten axes array for
+    axes = axes.ravel()
+
+    # Display original image
+    axes[0].imshow(original_image, cmap='gray')
+    axes[0].set_title('Original Image')
+    axes[0].axis('off')
+
+    # Display each compressed image
+    for i in range(1, len(compressed_images) + 1):
+        axes[i].imshow(compressed_images[i - 1], cmap='gray')
+        axes[i].set_title(f'Original Image at {compression_lvls[i]}% Compression')
+        axes[i].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+
 # Naive implementation of 1D DFT
 # x = input vector (1D)
 def DFT_1D(x):
@@ -233,3 +259,45 @@ def denoise(f, N, M, percentage=50):
     filtered_image = np.real(inverse_FFT_2D(F_filtered, N, M))
 
     return filtered_image
+
+# This function compresses an image to 5 levels of compression
+# f = input image
+# N = number of rows
+# M = number of columns
+def compress(f, N, M):
+    # Define compression levels (percentage of coefficients to zero out)
+    compression_levels = [20, 40, 60, 80, 99.9]
+    # Init result array of compressed images
+    compressed_images = []
+
+    # Compute 2D FFT of image
+    F = FFT_2D(f, N, M)
+
+    # Process each compression level
+    for idx, compression in enumerate(compression_levels):
+        # Make copy of FFT coefficients
+        F_compressed = F.copy()
+
+        # Get magnitudes of coefficients
+        magnitudes = np.abs(F_compressed)
+
+        # Find threshold value that zeros out desired percentage
+        threshold = np.percentile(magnitudes, compression)
+
+        # Create mask - keep only coefficients above threshold
+        mask = magnitudes > threshold
+
+        # Apply mask
+        F_compressed = F_compressed * mask
+
+        # Take inverse FFT
+        compressed = np.real(inverse_FFT_2D(F_compressed, N, M))
+        compressed_images.append(compressed)
+
+        # Print statistics
+        non_zeros = np.count_nonzero(F_compressed if compression > 0 else F)
+        total_coeffs = N * M
+        print(f"Compression level: {compression}%:")
+        print(f"{non_zeros} non-zero coefficients out of {total_coeffs} total coefficients")
+
+    return compressed_images, compression_levels
