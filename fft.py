@@ -54,7 +54,7 @@ def main():
         # Display images in a 2x3 grid
         logic.display_compressed_images(image, compressed_images, [0] + compression_lvls)
     elif mode == 4:
-        print("Mode 4 selected - plot runtime graphs")
+        logic.analyze_runtime_complexity()
 
 
 if __name__ == "__main__":
