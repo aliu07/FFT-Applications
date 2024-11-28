@@ -303,9 +303,15 @@ def compress(f, N, M, compression_levels):
     return compressed_images, compression_levels
 
 
-def analyze_runtime_complexity():
+# This function analyzes the runtime of naive 2D DFT and 2D FFT
+# image = input image
+# N = number of rows
+# M = number of columns
+def analyze_runtime_complexity(image, N, M):
+    # Take minimum dimension between height and width
+    min_dim = min(N, M)
     # Array of different input sizes (powers of 2 for FFT)
-    sizes = [2**i for i in range(4, 13)]  # From 16 to 4096
+    sizes = [2**i for i in range(0, 8) if 2**i <= min_dim]
 
     # Arrays to store runtimes
     dft_times = []
@@ -314,27 +320,27 @@ def analyze_runtime_complexity():
     # Number of trials for each size to get average runtime
     num_trials = 5
 
-    print("\nRuntime Analysis:")
-    print("-----------------")
+    print("Runtime Analysis:")
+    print("----------------------------------")
 
     for size in sizes:
         dft_trials = []
         fft_trials = []
 
-        # Generate random complex input
-        x = np.random.random(size) + 1j * np.random.random(size)
+        # Init cropped image of specific size
+        trial_image = crop(image, size, size)
 
         # Run multiple trials for each size
         for _ in range(num_trials):
             # Time DFT
             start = time.time()
-            DFT_1D(x)
+            DFT_2D(trial_image, size, size)
             end = time.time()
             dft_trials.append(end - start)
 
             # Time FFT
             start = time.time()
-            FFT_1D(x)
+            FFT_2D(trial_image, size, size)
             end = time.time()
             fft_trials.append(end - start)
 
@@ -347,25 +353,22 @@ def analyze_runtime_complexity():
         dft_times.append(dft_mean)
         fft_times.append(fft_mean)
 
-        print(f"\nInput size: {size}")
-        print(f"DFT - Mean: {dft_mean:.6f}s, Variance: {dft_var:.6f}")
-        print(f"FFT - Mean: {fft_mean:.6f}s, Variance: {fft_var:.6f}")
+        print(f"Input size: {size}x{size}")
+        print(f"2D DFT - Mean: {dft_mean:.6f}s, Variance: {dft_var:.6f}")
+        print(f"2D FFT - Mean: {fft_mean:.6f}s, Variance: {fft_var:.6f}")
+
+    # Square each size in the sizes array before plotting
+    # Before -> size represents dimension of square (length of side)
+    # After -> size represents area of square (total area)
+    squared_sizes = list(map(lambda x: x*x, sizes))
 
     # Create runtime comparison plot
     plt.figure(figsize=(10, 6))
-    plt.plot(sizes, dft_times, 'r-', label='DFT (O(n²))')
-    plt.plot(sizes, fft_times, 'b-', label='FFT (O(n log n))')
-    plt.xlabel('Input Size (n)')
+    plt.plot(squared_sizes, dft_times, 'r-o', label='Naive 2D DFT')
+    plt.plot(squared_sizes, fft_times, 'b-o', label='Cooley-Tukey 2D FFT')
+    plt.xlabel('Input Size (total number of pixels)')
     plt.ylabel('Runtime (seconds)')
     plt.title('Runtime Comparison: DFT vs FFT')
     plt.legend()
     plt.grid(True)
-    plt.xscale('log')
-    plt.yscale('log')
-
-    # Plot theoretical complexity curves for comparison
-    n = np.array(sizes)
-    plt.plot(n, 1e-7 * n * np.log2(n), 'b--', label='O(n log n)', alpha=0.5)
-    plt.plot(n, 1e-8 * n * n, 'r--', label='O(n²)', alpha=0.5)
-    plt.legend()
     plt.show()
