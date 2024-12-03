@@ -30,6 +30,7 @@ def main():
     if mode == 1:
         # Obtain 2D FFT of image
         fft_image = logic.FFT_2D(padded_image, padded_N, padded_M)
+        # fft_image = np.fft.fft2(padded_image)
         # Crop image back to original dimensions
         fft_image = logic.crop(fft_image, N, M)
         # We only keep the magnitude of each value in the matrix
@@ -37,12 +38,14 @@ def main():
         # Display images side by side with logarithmic scaling
         logic.display(image, fft_image, "Fourier Transform of Original Image (Log Scale)", True)
     elif mode == 2:
+        # Set percentage of coefficients to keep
+        percentage = 0
         # Obtain denoised image
-        denoised_image = logic.denoise(padded_image, padded_N, padded_M)
+        denoised_image = logic.denoise(padded_image, padded_N, padded_M, percentage)
         # Crop denoised image
         denoised_image = logic.crop(denoised_image, N, M)
         # Display images side by side
-        logic.display(image, denoised_image, "Denoised Image", False)
+        logic.display(image, denoised_image, f"Denoised Image (~{percentage}% coefficients kept)", False)
     elif mode == 3:
         # Compression levels (%)
         compression_lvls = [60, 90, 93, 96, 99.9]
@@ -54,7 +57,7 @@ def main():
         # Display images in a 2x3 grid
         logic.display_compressed_images(image, compressed_images, [0] + compression_lvls)
     elif mode == 4:
-        logic.analyze_runtime_complexity(padded_image, padded_N, padded_M)
+        logic.analyze_runtime_complexity()
 
 
 if __name__ == "__main__":

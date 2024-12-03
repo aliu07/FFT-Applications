@@ -230,27 +230,31 @@ def denoise(f, N, M, percentage=50):
     # Shift zero frequency components to center
     F_shifted = np.fft.fftshift(F)
 
-    # Create mask for specified percentage
-    center_row, center_col = N//2, M//2
-
-    # Calculate radius that keeps the percentage specified of coefficients
-    total_area = N * M
-    desired_area = total_area * percentage / 100
-    radius = int(math.sqrt(desired_area / math.pi))
-
-    # Create circular mask
+    # Create rectangular mask based on percentage
     mask = np.zeros((N, M))
-    y, x = np.ogrid[-center_row:N-center_row, -center_col:M-center_col]
-    mask_area = x*x + y*y <= radius*radius
-    mask[mask_area] = 1
+
+    # Calculate dimensions of rectangle to keep percentage% of coefficients
+    # Use sqrt of percentage to get proportional dimensions
+    scale = np.sqrt(percentage / 100)
+    height = int(N * scale)
+    width = int(M * scale)
+
+    # Calculate starting points to center the rectangle
+    start_row = (N - height) // 2
+    start_col = (M - width) // 2
+
+    # Create rectangular mask
+    mask[start_row:start_row+height, start_col:start_col+width] = 1
 
     # Apply mask and count non-zero coefficients
     F_filtered = F_shifted * mask
     non_zeros = np.count_nonzero(F_filtered)
     total_coeffs = N * M
+    zeros = total_coeffs - non_zeros
 
     print(f"Number of non-zero coefficients: {non_zeros}")
-    print(f"Fraction of original coefficients: {non_zeros/total_coeffs:.2%}")
+    print(f"Number of zero coefficients: {zeros}")
+    print(f"Percentage of original coefficients: {non_zeros/total_coeffs:.2%}")
 
     # Shift back
     F_filtered = np.fft.ifftshift(F_filtered)
@@ -307,18 +311,19 @@ def compress(f, N, M, compression_levels):
 # image = input image
 # N = number of rows
 # M = number of columns
-def analyze_runtime_complexity(image, N, M):
-    # Take minimum dimension between height and width
-    min_dim = min(N, M)
-    # Array of different input sizes (powers of 2 for FFT)
-    sizes = [2**i for i in range(0, 8) if 2**i <= min_dim]
+def analyze_runtime_complexity():
+    # Array of different input sizes
+    sizes = [25, 32, 64, 96, 128]
 
     # Arrays to store runtimes
     dft_times = []
     fft_times = []
+    # Arrays to store standard deviations
+    dft_stds = []
+    fft_stds = []
 
     # Number of trials for each size to get average runtime
-    num_trials = 5
+    num_trials = 10
 
     print("Runtime Analysis:")
     print("----------------------------------")
@@ -327,31 +332,39 @@ def analyze_runtime_complexity(image, N, M):
         dft_trials = []
         fft_trials = []
 
-        # Init cropped image of specific size
-        trial_image = crop(image, size, size)
+        # Init image of given size, need to pad
+        trial_matrix = pad(np.random.rand(size, size), size, size)
+        N, M = trial_matrix.shape
 
         # Run multiple trials for each size
         for _ in range(num_trials):
             # Time DFT
             start = time.time()
-            DFT_2D(trial_image, size, size)
+            DFT_2D(trial_matrix, N, M)
             end = time.time()
             dft_trials.append(end - start)
 
             # Time FFT
             start = time.time()
-            FFT_2D(trial_image, size, size)
+            FFT_2D(trial_matrix, N, M)
             end = time.time()
             fft_trials.append(end - start)
 
         # Calculate statistics
         dft_mean = np.mean(dft_trials)
+        dft_std = np.std(dft_trials)
         dft_var = np.var(dft_trials)
+
         fft_mean = np.mean(fft_trials)
+        fft_std = np.std(fft_trials)
         fft_var = np.var(fft_trials)
 
+        # Store statistics
         dft_times.append(dft_mean)
         fft_times.append(fft_mean)
+
+        dft_stds.append(dft_std)
+        fft_stds.append(fft_std)
 
         print(f"Input size: {size}x{size}")
         print(f"2D DFT - Mean: {dft_mean:.6f}s, Variance: {dft_var:.6f}")
@@ -364,8 +377,10 @@ def analyze_runtime_complexity(image, N, M):
 
     # Create runtime comparison plot
     plt.figure(figsize=(10, 6))
-    plt.plot(squared_sizes, dft_times, 'r-o', label='Naive 2D DFT')
-    plt.plot(squared_sizes, fft_times, 'b-o', label='Cooley-Tukey 2D FFT')
+    plt.errorbar(squared_sizes, dft_times, yerr=np.multiply(dft_stds, 2),
+                    fmt='r-o', label='Naive 2D DFT', capsize=5)
+    plt.errorbar(squared_sizes, fft_times, yerr=np.multiply(fft_stds, 2),
+                    fmt='b-o', label='Cooley-Tukey 2D FFT', capsize=5)
     plt.xlabel('Input Size (total number of pixels)')
     plt.ylabel('Runtime (seconds)')
     plt.title('Runtime Comparison: DFT vs FFT')
