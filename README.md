@@ -4,3 +4,6 @@
 - Extend the FFT algorithm to the multidimensional case (2D in this case)
 - Use FFT to denoise an image
 - Use FFT to compress an image file
+
+# Additional Information
+- Written and tested using Python version 3.10.7
