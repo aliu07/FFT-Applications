@@ -302,7 +302,7 @@ def compress(f, N, M, compression_levels):
         non_zeros = np.count_nonzero(F_compressed if compression > 0 else F)
         total_coeffs = N * M
         print(f"Compression level: {compression}%:")
-        print(f"{non_zeros} non-zero coefficients out of {total_coeffs} total coefficients")
+        print(f"{non_zeros} non-zero coefficients out of {total_coeffs} total coefficients ({non_zeros/total_coeffs:.2%}%)")
 
     return compressed_images, compression_levels
 
@@ -313,7 +313,7 @@ def compress(f, N, M, compression_levels):
 # M = number of columns
 def analyze_runtime_complexity():
     # Array of different input sizes
-    sizes = [25, 32, 64, 96, 128]
+    sizes = [25, 32, 64, 128]
 
     # Arrays to store runtimes
     dft_times = []

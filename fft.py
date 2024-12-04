@@ -39,7 +39,7 @@ def main():
         logic.display(image, fft_image, "Fourier Transform of Original Image (Log Scale)", True)
     elif mode == 2:
         # Set percentage of coefficients to keep
-        percentage = 0
+        percentage = 50
         # Obtain denoised image
         denoised_image = logic.denoise(padded_image, padded_N, padded_M, percentage)
         # Crop denoised image
